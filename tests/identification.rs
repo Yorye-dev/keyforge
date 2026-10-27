@@ -28,6 +28,10 @@ fn simulated_states_do_not_imply_write_access() {
             DeviceCapabilitiesService::assess(model)
                 .0
                 .iter()
+                .filter(|c| !matches!(
+                    c.capability,
+                    Capability::LocalKeys | Capability::LocalLayers
+                ))
                 .all(|c| !c.actionable && c.state != CapabilityState::Verified)
         );
     }

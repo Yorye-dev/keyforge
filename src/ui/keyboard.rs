@@ -25,6 +25,8 @@ pub fn draw(
     zoom: f32,
     pan: &mut Vec2,
     selected: &mut Option<String>,
+    labels: &std::collections::BTreeMap<String, String>,
+    changed: &std::collections::BTreeSet<String>,
 ) {
     let (response, painter) =
         ui.allocate_painter(ui.available_size(), egui::Sense::click_and_drag());
@@ -64,16 +66,43 @@ pub fn draw(
         painter.add(egui::Shape::convex_polygon(
             points,
             fill,
-            Stroke::new(if active { 2.0 } else { 1.0 }, Color32::from_gray(105)),
+            Stroke::new(
+                if active { 2.0 } else { 1.0 },
+                if changed.contains(&key.id) {
+                    Color32::from_rgb(235, 180, 75)
+                } else {
+                    Color32::from_gray(105)
+                },
+            ),
         ));
         let g = &key.geometry;
-        painter.text(
-            transform([g.x + g.width / 2.0, g.y + g.height / 2.0]),
-            egui::Align2::CENTER_CENTER,
-            &key.label,
-            egui::FontId::proportional((scale * 0.23).clamp(9.0, 24.0)),
-            Color32::WHITE,
-        );
+        let label = labels.get(&key.id).unwrap_or(&key.label);
+        let center = transform([g.x + g.width / 2.0, g.y + g.height / 2.0]);
+        let text_rect =
+            egui::Rect::from_center_size(center, Vec2::new(g.width, g.height) * scale * 0.9);
+        let longest_line = label
+            .lines()
+            .map(|line| line.chars().count())
+            .max()
+            .unwrap_or(1)
+            .max(1);
+        let font_size = (scale * 0.28)
+            .min(text_rect.width() / (longest_line as f32 * 0.6))
+            .clamp(6.0, 24.0);
+        painter
+            .with_clip_rect(text_rect.intersect(response.rect))
+            .text(
+                center,
+                egui::Align2::CENTER_CENTER,
+                label,
+                egui::FontId::proportional(font_size),
+                Color32::WHITE,
+            );
+        if hovered {
+            response
+                .clone()
+                .on_hover_text(format!("{}: {}", key.id, label.replace('\n', " ")));
+        }
     }
     for display in &layout.displays {
         painter.add(egui::Shape::convex_polygon(

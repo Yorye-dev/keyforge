@@ -11,3 +11,5 @@ pub trait QmkMetadataRepository {
         self.models().iter().find(|m| m.id == id)
     }
 }
+pub mod editor;
+pub mod file_jobs;

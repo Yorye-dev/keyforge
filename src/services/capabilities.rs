@@ -16,13 +16,13 @@ impl DeviceCapabilitiesService {
     pub fn assess(model: Option<&KeyboardModel>) -> DeviceCapabilities {
         DeviceCapabilities(Capability::ALL.into_iter().map(|capability| {
             let (state, explanation) = match capability {
-                Capability::LocalKeys | Capability::LocalLayers => (CapabilityState::Unavailable, "La edición de perfiles llegará en la siguiente fase. Ya puedes explorar y seleccionar layouts.".into()),
+                Capability::LocalKeys | Capability::LocalLayers => (CapabilityState::Verified, "Edición local disponible sin conectar un dispositivo. Guardar un perfil no lo envía al teclado.".into()),
                 Capability::Compile | Capability::Flash => (CapabilityState::Unavailable, "La generación y actualización de firmware aún no están implementadas.".into()),
                 Capability::Displays => DisplayCapabilitiesService::assess(model),
                 Capability::Lighting if model.and_then(|m| m.lighting) == Some(true) => (CapabilityState::Metadata, "El catálogo declara iluminación; esta aplicación todavía no la controla.".into()),
                 _ => (CapabilityState::Unknown, "Necesita un protocolo compatible y comprobado. Todavía no hay un adaptador físico implementado.".into()),
             };
-            CapabilityAssessment { capability, state, explanation, actionable: false }
+            CapabilityAssessment { capability, state, explanation, actionable: matches!(capability, Capability::LocalKeys | Capability::LocalLayers) }
         }).collect())
     }
 }
